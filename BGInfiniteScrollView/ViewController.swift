@@ -16,6 +16,7 @@ struct ViewConfig {
 class ViewController: UIViewController {
     var dataList:[ViewConfig] = []
     let infinitScorllView = BGInfinitScrollView()
+    var timer:NSTimer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,11 +31,13 @@ class ViewController: UIViewController {
         }
         
         useInfinitScrollView()
+        startAnimation()
         
     }
 
     func useInfinitScrollView() {
         infinitScorllView.pagingEnabled = true
+        infinitScorllView.delegate = self
         
         let count = dataList.count
         let width = UIScreen.mainScreen().bounds.width
@@ -64,5 +67,36 @@ class ViewController: UIViewController {
         viewa.textAlignment = .Center
         toView.addSubview(viewa)
     }
+    
+    func startAnimation() {
+        self.timer = NSTimer(timeInterval: 2.0, target: self, selector: #selector(self.scrollViewInfinitScrollView), userInfo: nil, repeats: true)
+        NSRunLoop.currentRunLoop().addTimer(self.timer!, forMode: NSRunLoopCommonModes)
+        
+    }
+    
+    func stopAnimation() {
+        self.timer?.invalidate()
+        self.timer = nil
+    }
+    
+    func scrollViewInfinitScrollView() {
+        var offset = infinitScorllView.contentOffset
+        var index = Int(offset.x / infinitScorllView.frame.width)
+        index += 1
+        //当自动轮播到额外的一个view时就触发了layoutSubView的判断
+        offset.x = CGFloat(index) *  infinitScorllView.frame.width
+        dispatch_async(dispatch_get_main_queue()) {
+            self.infinitScorllView.setContentOffset(offset, animated: true)
+        }
+    }
+}
 
+extension ViewController: UIScrollViewDelegate{
+    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        startAnimation()
+    }
+    
+    func scrollViewWillBeginDragging(scrollView: UIScrollView) {
+        stopAnimation()
+    }
 }
